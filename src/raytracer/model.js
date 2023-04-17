@@ -15,12 +15,11 @@ const API = {
   sqrts: (value) => API.plusMinus(API.sqrtPositive(value)),
   divide: (numerator, denominator) => API.multiply(numerator, API.reciprocal(denominator)),
   subtract: (valueA, valueB) => API.add(valueA, API.negative(valueB)),
-  lerp: (a, b, t) => API.add(a, API.multiply(API.subtract(b, a), t)),
-  max: (valueA, valueB) => API.negative(API.min(API.negative(valueA), API.negative(valueB))),
-  clampAboveZero: (value) => API.max(value, 0),
-  clampZeroOne: (value) => pipe(API.min, API.clampAboveZero)(value, 1),
-  round: (value) => pipe(API.add, API.floor)(value, 0.5),
-  greaterThanZero: (value) => API.greaterThan(value, 0),
+  clampAboveZero: (value) => API.ternary(
+    API.greaterThanZero(value),
+    value,
+    0,
+  ),
   degToRad: (value) => API.multiply(value, Math.PI / 180),
   // Combinations: complex single-variable formulas
   quadratic: (a, b, c) => API.map(
@@ -36,19 +35,14 @@ const API = {
     ),
   ),
   // Combinations: vectors
-  scale: (vector, scale) => API.map(vector, entry => API.multiply(entry, scale)),
-  vectorAdd: (vectorA, vectorB) => API.entryWiseCombine(vectorA, vectorB, API.add),
-  vectorMultiply: (vectorA, vectorB) => API.entryWiseCombine(vectorA, vectorB, API.multiply),
-  entryWiseLerp: (listA, listB, t) => API.entryWiseCombine(listA, listB, (a, b) => API.lerp(a, b, t)),
-  dotProduct: (vectorA, vectorB) => API.reduce(API.vectorMultiply(vectorA, vectorB), API.add),
   rayParametric: (point, vector, t) => API.vectorAdd(point, API.scale(vector, t)),
   vectorNegative: (vector) => API.scale(vector, -1),
   vectorSubtract: (vectorA, vectorB) => API.vectorAdd(vectorA, API.vectorNegative(vectorB)),
   lengthNoSqrt: (vector) => API.dotProduct(vector, vector),
   length: (vector) => API.sqrtPositive(API.lengthNoSqrt(vector)),
   normalize: (vector) => API.scale(vector, API.reciprocal(API.length(vector))),
-  project: (toProject, onto) => API.scale(onto, API.divide(API.dotProduct(toProject, onto), API.lengthNoSqrt(onto))),
-  reflect: (incoming, normal) => API.vectorAdd(incoming, API.scale(API.project(incoming, normal), -2)),
+  projectAssumingNormalized: (toProject, onto) => API.scale(onto, API.dotProduct(toProject, onto)),
+  reflectAssumingNormalized: (incoming, normal) => API.vectorAdd(incoming, API.scale(API.projectAssumingNormalized(incoming, normal), -2)),
   rotateX: (vector, theta) =>
     API.rearrangeList(
       API.rotateZ(
@@ -69,14 +63,6 @@ const API = {
         theta),
       [1, 2, 0],
     ),
-  applyTransformMatrix: (vector, matrix) => API.reduce(
-    API.entryWiseCombine(
-      vector,
-      matrix,
-      (component, axis) => API.scale(axis, component),
-    ),
-    API.vectorAdd,
-  ),
   z: (vector) => API.entry(vector, 2),
   // Combinations: geometry
   sphere: (center, radius, shader) => (point, vector) => {
@@ -120,16 +106,12 @@ const API = {
     )
   },
   // Combinations: colors (for simplicity's sake these are stored just like vectors; more or less a similar idea)
-  rgbComponentToString: (component) => pipe(API.multiply, API.floor)(API.clampZeroOne(component), 255),
-  colorToString: (color) => API.join([
-    'rgba(',
-    API.join(API.map(color, API.rgbComponentToString), ','),
-    ',1.0)',
-  ], ''),
   colorAdd: (colorA, colorB) => API.vectorAdd(colorA, colorB),
+  colorSubtract: (colorA, colorB) => API.vectorSubtract(colorA, colorB),
   colorBrightness: (color, brightness) => API.scale(color, brightness),
-  colorMultiply: (colorA, colorB) => API.vectorMultiply(colorA, colorB),
+  colorLerp: (colorA, colorB, t) => API.colorAdd(colorA, API.colorBrightness(API.colorSubtract(colorB, colorA), t)),
   // Combinations: shaders
+  // https://www.techspot.com/article/1998-how-to-3d-rendering-lighting-shadows/
   sunLight: (sunVector, sunColor) => (hitInfo, geometries) =>
     API.colorBrightness(
       sunColor,
@@ -140,25 +122,17 @@ const API = {
       ),
     ),
   ambientLight: (color) => () => color,
-  mirror: () => (hitInfo, geometries, skyShader, bouncesLeft) =>
+  mirrorAssumingNormalized: () => (hitInfo, geometries, skyShader, bouncesLeft) =>
     API.rayColor(
       hitInfo.position,
-      API.reflect(hitInfo.incoming, hitInfo.normal),
+      API.reflectAssumingNormalized(hitInfo.incoming, hitInfo.normal),
       bouncesLeft > 0 ? geometries : [],
       skyShader,
       bouncesLeft - 1,
     ),
-  checker: (scale, colorOdd, colorEven) => (hitInfo) =>
+  checkerColor: (spaceSize, colorOdd, colorEven) => (hitInfo) =>
     API.ternary(
-      API.isEven(
-        API.reduce(
-          API.map(
-            API.vectorMultiply(hitInfo.position, [1, 1, 0]),
-            entry => pipe(API.divide, API.floor)(entry, scale)
-          ),
-          API.add,
-        ),
-      ),
+      API.checkerEvenSpace(hitInfo.position, spaceSize),
       colorEven,
       colorOdd,
     ),
@@ -166,7 +140,7 @@ const API = {
     const z = API.z(hitInfo.incoming);
     return API.ternary(
       API.greaterThanZero(z),
-      API.entryWiseLerp(horizon, sky, z),
+      API.colorLerp(horizon, sky, z),
       ground,
     )
   },

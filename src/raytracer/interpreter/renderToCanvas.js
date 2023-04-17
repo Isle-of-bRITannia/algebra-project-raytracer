@@ -2,6 +2,8 @@ import { Rt } from '../model.js';
 import { pipe } from '../utility/index.js';
 import { calculate } from './calculate.js';
 
+const clampZeroOne = value => Math.min(Math.max(0, value), 1);
+
 const identityMatrix = [
   [1, 0, 0],
   [0, 1, 0],
@@ -36,8 +38,8 @@ const renderToCanvas = ({ ctx, width, height, cameraPosition, cameraPitch, camer
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       setTimeout(() => {
-        const pixel = calculate(
-          pipe(Rt.rayColor, Rt.colorToString)(
+        ctx.fillStyle = `rgba(${calculate(
+          Rt.rayColor(
             camPosCalculated,
             calculate(
               Rt.applyTransformMatrix(
@@ -55,8 +57,7 @@ const renderToCanvas = ({ ctx, width, height, cameraPosition, cameraPitch, camer
             skyShader,
             maxBounces,
           ),
-        );
-        ctx.fillStyle = pixel;
+        ).map(component => Math.floor(clampZeroOne(component) * 255)).join(',')}, 1.0)`;
         ctx.fillRect(x, y, 1, 1);
         pixelDone();
       });

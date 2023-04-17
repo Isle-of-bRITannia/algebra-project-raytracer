@@ -18,11 +18,6 @@ const Alg = {
     _tag: 'Flatten',
     list,
   }),
-  join: (list, separator) => ({
-    _tag: 'Join',
-    list,
-    separator,
-  }),
   isNull: (value) => ({
     _tag: 'IsNull',
     value,
@@ -32,10 +27,6 @@ const Alg = {
     boolean,
     ifTrue,
     ifFalse,
-  }),
-  isEven: (value) => ({
-    _tag: 'IsEven',
-    value,
   }),
   multiply: (valueA, valueB) => ({
     _tag: 'Multiply',
@@ -59,25 +50,39 @@ const Alg = {
     _tag: 'PlusMinus',
     value,
   }),
-  min: (valueA, valueB) => ({
-    _tag: 'Min',
-    valueA,
-    valueB,
-  }),
-  floor: (value) => ({
-    _tag: 'Floor',
+  greaterThanZero: (value) => ({
+    _tag: 'GreaterThanZero',
     value,
   }),
-  greaterThan: (value, threshold) => ({
-    _tag: 'GreaterThan',
-    value,
-    threshold,
+  scale: (vector, scale) => ({
+    _tag: 'Scale',
+    vector,
+    scale,
   }),
-  entryWiseCombine: (listA, listB, func) => ({
-    _tag: 'EntryWiseCombine',
-    listA,
-    listB,
-    func,
+  vectorAdd: (vectorA, vectorB) => ({
+    _tag: 'VectorAdd',
+    vectorA,
+    vectorB,
+  }),
+  dotProduct: (vectorA, vectorB) => ({
+    _tag: 'DotProduct',
+    vectorA,
+    vectorB,
+  }),
+  colorMultiply: (colorA, colorB) => ({
+    _tag: 'ColorMultiply',
+    colorA,
+    colorB,
+  }),
+  applyTransformMatrix: (vector, matrix) => ({
+    _tag: 'ApplyTransformMatrix',
+    vector,
+    matrix,
+  }),
+  checkerEvenSpace: (position, spaceSize) => ({
+    _tag: 'CheckerEvenSpace',
+    position,
+    spaceSize,
   }),
   rotateZ: (vector, theta) => ({
     _tag: 'RotateZ',

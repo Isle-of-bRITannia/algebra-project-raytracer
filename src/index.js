@@ -13,9 +13,9 @@ const ctx = canvas?.getContext('2d');
 
 const myLights = calculate(Rt.addManyShaders(
   Rt.ambientLight([
-    0.1,
-    0.15,
-    0.2,
+    0.25,
+    0.3,
+    0.35,
   ]),
   Rt.sunLight(
     [
@@ -24,13 +24,12 @@ const myLights = calculate(Rt.addManyShaders(
       -0.639582,
     ],
     [
-      1,
-      1,
-      1,
+      0.8,
+      0.8,
+      0.8,
     ],
   ),
 ));
-console.log(myLights);
 
 const head = [
   [0, 1.75, 7.32238],
@@ -143,7 +142,7 @@ const mirrorBalls = [
 ].map(center => Rt.sphere(
   center,
   1.367,
-  Rt.mirror(),
+  Rt.mirrorAssumingNormalized(),
 ));
 
 const myObjects = [
@@ -160,10 +159,10 @@ const myObjects = [
     0,
     calculate(Rt.multiplyShaders(
       myLights,
-      Rt.checker(
+      Rt.checkerColor(
         4,
-        [0.1, 0.1, 0.1],
-        [1.0, 1.0, 1.0],
+        [0.5, 0.5, 0.5],
+        [0.75, 0.75, 0.75],
       ),
     )),
   ),
