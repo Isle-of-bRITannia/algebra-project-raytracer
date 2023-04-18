@@ -2,9 +2,9 @@ import { Rt } from './raytracer/model.js';
 import { calculate } from './raytracer/interpreter/calculate.js';
 import { renderToCanvas } from './raytracer/interpreter/renderToCanvas.js';
 
-// const width = 640, height = 480;
+const width = 640, height = 480;
 // const width = 384, height = 288;
-const width = 192, height = 144;
+// const width = 192, height = 144;
 // const width = 64, height = 48;
 const canvas = document.querySelector('#canvas');
 canvas.width = width;
